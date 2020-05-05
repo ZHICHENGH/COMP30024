@@ -1,4 +1,12 @@
-
+class SquareBoard:
+    def __init__ (self,owntokens,opponenttokens):
+        self.opponenttokens = opponenttokens
+        self.owntokens = owntokens
+def CoorIsValid(coor):
+    if (coor[0]>=0 and coor[0]<=7):
+        if (coor[1]>=0 and coor[1]<=7):
+            return True
+    return False
 def isEmpty(cor,coor):
     if (cor in coor):
         return False
@@ -144,7 +152,7 @@ def getchoosentokens(k,owntokens,opponenttokens):
 def makeevaluation(movement,coor,owntokens,opponenttokens):
     alltokens=opponenttokens+owntokens
     evavalue=0
-    if(movement=="boom"):
+    if(movement==1):
         boomArea=getboomArea(coor)
         tmplist=list(set(getBoomResult(boomArea,alltokens)))
         for coor in tmplist:
@@ -163,7 +171,6 @@ def makeevaluation(movement,coor,owntokens,opponenttokens):
                 else:
                     if(mostdan==[]):
                         mostdan=comb
-        print(mostvaluable,mostdan)
         evavalue=(1.0*mostvaluable[3])/mostvaluable[2]+(1.0*mostdan[3])/mostdan[2]
     return evavalue
 
@@ -203,3 +210,62 @@ def getsupportgoal(k,whites,blacks):
                 mindistance=distance
                 result=goalpoint
     return result
+
+def alphaBeta(white,black,boardgame):
+    alpha = -1000
+    beta = 1000
+    Player = True
+    #Make sure depth == maxdepth
+    depth = 3
+    maxdepth = 3
+    #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
+    print("start\n")
+    startmove = (-1,-1)
+    # All possible move inside
+    #   Movemomen
+    possibleMovement = {}
+    # The best value
+    value = alphaBetaCore(boardgame,depth,alpha,beta,Player,startmove,possibleMovement,white,black,maxdepth)
+    print("finish\n")
+    print(f"A-B result is {value}")
+    print(f"THE MOVEMENT is {possibleMovement}")
+
+
+def GameOver(owntokens,opponenttokens):
+    if(len(owntokens)==0 or len(opponenttokens)==0):
+       return True
+    return False
+def getpossiblemovement(coor,boardgame):
+    stacknumber=boardgame.owntokens.count(coor)
+    possiblegoal=[]
+    directions=[-1,1]
+    result=[]
+    for i in range(1,stacknumber+1):
+        for direction in directions:
+                possiblegoal.append((coor[0]+direction*i, coor[1]))
+                possiblegoal.append((coor[0],coor[1]+direction*i))
+    possiblegoal= filter(CoorIsValid,possiblegoal)
+    tmppossiblegoal=possiblegoal.copy()
+    for goal in possiblegoal:
+        if goal in boardgame.opponenttokens:
+            tmppossiblegoal.remove(goal)
+    possiblegoal=tmppossiblegoal.copy()
+    for goal in possiblegoal:
+        owntokens=boardgame.owntokens.copy()
+        for i in range(0,stacknumber):
+                owntokens.remove(coor)
+                owntokens.append(goal)
+                newboardgame=(owntokens.copy(),boardgame.opponenttokens)
+                result.append(newboardgame)
+    return result
+def alphaBetaCore(boardgame,movement,depth,alpha,beta,Player,coor,owntokens,opponenttokens,maxdepth,chosenowntokens,chosenopponenttokens):
+    #bottom of the tree
+    if (depth==maxdepth or GameOver(owntokens,opponenttokens)):
+        if(movement==1):
+            return makeevaluation(1,coor,owntokens,opponenttokens)
+        else:
+            return makeevaluation(0,coor,owntokens,opponenttokens)
+    possibleMovement=getpossiblemovement(coor,owntokens,opponenttokens)
+
+    if(depth%2==0):
+

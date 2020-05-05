@@ -114,30 +114,18 @@ def getinformat(boardgame,positionList,colour):
             temp += 1
 
     return list
+
+
 def recoverFormat(input):
     new = list(set(input)).copy()
-
     return new
 
 def main():
-    #testwhite = [(1,0),(0,1),(0,1),(0,1),(1,0),(0,0)]
 
     boardgame = SquareBoard(8,8, _BLACK_START_SQUARES.copy(),_WHITE_START_SQUARES.copy())
 
-
-    #tempList = getinformat(boardgame,testWhite,True)
-
-    #if detectStack(tempList):
-
-
-    #print(f"afterconvertion {tempList}")
-    #boardgame = SquareBoard(8,8,_BLACK_START_SQUARES.copy(),testwhite.copy())
-
-    #white = [(1,0),(1,0),(0,1),(0,1),(0,1)]
     alphaBeta(testWhite, testBlack,boardgame)
 
-
-    # realwhite can be replaced by any required tokenlist
 
 
 
@@ -151,10 +139,11 @@ def alphaBeta(white,black,boardgame):
     #boardgame = SquareBoard(8,8,black.copy(),white.copy())
     Player = True
 
+    #Make sure depth == maxdepth
     depth = 3
     maxdepth = 3
 
-    print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
+    #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
 
 
     print("start\n")
@@ -166,59 +155,48 @@ def alphaBeta(white,black,boardgame):
 
     # The best value
     value = alphaBetaCore(boardgame,depth,alpha,beta,Player,startmove,possibleMovement,white,black,maxdepth)
-    #print(printList)
+
 
     print("finish\n")
     print(f"A-B result is {value}")
     print(f"THE MOVEMENT is {possibleMovement}")
 
 
-''' Assume the white or black just pass possitions which is unknown the stack
-    Ex : Chess board: white = [(1,1),(1,1),(1,2)]
-        check inputwhite [(1,1)]
-     1. Change to All shown form
-        Ex: take [(1,1)]
-            read from [(1,1),(1,1)]
-     2. Do the judge ment
-     3. Update the value
-     4. From
-        '''
-def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,maxdepth):
+
+def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,possibleMovement,Owntokens,Opponentokens,maxdepth):
+
+
     #Test only return
-    print(f"Now at deep {depth}\n -----")
-
-
-    # Need add the game end flag
     if depth == 0:
 
-        #return len(getGoal(boardgame.opponenttokens))
+
         return len(list(set(getBoomResult(getboomArea(move),boardgame.opponenttokens))))\
          - len(list(set(getBoomResult(getboomArea(move),boardgame.owntokens))))
 
 
     if Player:
-        white = getinformat(boardgame,white,True)
+        Owntokens = getinformat(boardgame,Owntokens,True)
         maxvalue = -1000
 
 
         #Stack part if doesnt work please delete this if
-        if detectStack(white):
+        if detectStack(Owntokens):
 
-            dictStack = createDic(white)
+            dictStack = createDic(Owntokens)
             # Key is the position of stacks
             for key in dictStack.keys():
                 if dictStack[key] > 1:
+
                     temp = dictStack[key]
-                    print(f" Now processing stack on{key}, the stack is number is{temp}")
-                    #print("_____________\n")
                     stackdeep = dictStack[key]
+
                     while (stackdeep > 0):
-                        print(f"current stackdeep is {stackdeep}")
+
                         for move in boardgame.validMove(key,temp,True):
                             if(not boardgame.onTheBoard(move)):
-                                print("############")
-                                tempsquarelist = white.copy()
-                                tempsquarelistB = black.copy()
+
+                                tempsquarelist = Owntokens.copy()
+                                tempsquarelistB = Opponentokens.copy()
                                 owntokensBefore = boardgame.owntokens.copy()
                                 opponenttokenBefore = boardgame.opponenttokens.copy()
 
@@ -226,77 +204,78 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
                                 tempsquare = tempsquarelist[maxindex]
 
 
-                                newwhite, newblack = updateboomresult(tempsquare,white.copy(),black.copy())
+                                newOwntokens, newOpponentokens = updateboomresult(tempsquare,Owntokens.copy(),Opponentokens.copy())
                                 boardgame.owntokens, boardgame.opponenttokens = updateboomresult(tempsquare,owntokensBefore.copy(),opponenttokenBefore.copy())
 
-                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,newblack,maxdepth)
+                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,newOpponentokens,maxdepth)
                                 maxvalue = max(maxvalue,value)
 
+
+                                #Store the possible movement
                                 if depth == maxdepth and value >= maxvalue:
-                                        printList[("Bomb",tempsquare)] = value
+                                        possibleMovement[("Bomb",tempsquare)] = value
+
+
                                 alpha = max(alpha,maxvalue)
+
                                 if beta <= alpha:
                                     # Undo the movment
-                                    white = tempsquarelist
-                                    black = tempsquarelistB
+                                    Owntokens = tempsquarelist
+                                    Opponentokens = tempsquarelistB
                                     boardgame.owntokens = owntokensBefore
                                     boardgame.opponenttokens = opponenttokenBefore
                                     break
 
 
-                                white = tempsquarelist
-                                black = tempsquarelistB
+                                Owntokens = tempsquarelist
+                                Opponentokens = tempsquarelistB
                                 boardgame.owntokens = owntokensBefore
                                 boardgame.opponenttokens = opponenttokenBefore
                                 stackdeep = 0
+
+
                             else:
 
-                                print("_____________\n")
-                                tempsquareList = white.copy()
+
+                                tempsquareList = Owntokens.copy()
                                 tempsquare = key
 
-                                print(f"the white is {white}")
-                                indexwhite = getDuplicateIndex(tempsquareList,key)[:stackdeep]
-                                #print(f"white index is {indexwhite}")
-                                for index in indexwhite:
-                                   white[index] = move
-                                print(f"the white is upgraded to {white}")
-                                print(f"the white on board is {boardgame.owntokens}")
-                                boardindex = getDuplicateIndex(boardgame.owntokens,key)[:stackdeep]
 
-                                #print(f"board white index is {boardindex}")
+                                indexOwntokens = getDuplicateIndex(tempsquareList,key)[:stackdeep]
+                                for index in indexOwntokens:
+                                   Owntokens[index] = move
+
+                                boardindex = getDuplicateIndex(boardgame.owntokens,key)[:stackdeep]
                                 for index in boardindex:
                                     boardgame.owntokens[index] = move
-                                #print(f"the white on board is upgraded to {boardgame.owntokens}")
-                                #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
-                                #print("_____________\n")
-                                newwhite = recoverFormat(white)
-                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,black,maxdepth)
+
+                                newOwntokens = recoverFormat(Owntokens)
+                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,Opponentokens,maxdepth)
                                 maxvalue = max(maxvalue,value)
 
+                                #Store the possible movement
                                 if depth == maxdepth and value >= maxvalue:
                                     if boardgame.onTheBoard(move):
-                                        printList[("MOVE",stackdeep,tempsquare,move)] = value
+                                        possibleMovement[("MOVE",stackdeep,tempsquare,move)] = value
+
+
                                 alpha = max(alpha,maxvalue)
-                                #printList.append(move)
+
 
                                 if beta <= alpha:
                                     # Undo the movment
-                                    for index in indexwhite:
-                                        white[index] = key
+                                    for index in indexOwntokens:
+                                        Owntokens[index] = key
                                     for index in boardindex:
                                         boardgame.owntokens[index] = key
                                     break
-                                #print("done upgrade now do recover\n")
-                                #print("************")
-                                #print(f"the white was upgraded to {realwhite}")
-                                for index in indexwhite:
-                                    white[index] = key
-                                #print(f"the white is recovered to {realwhite}")
-                                #print(f"the white on board was upgraded to {boardgame.owntokens}")
+
+                                for index in indexOwntokens:
+                                    Owntokens[index] = key
+
                                 for index in boardindex:
                                     boardgame.owntokens[index] = key
-                                #print(f"the white on board is recovered to {boardgame.owntokens}")
+
                         stackdeep -= 1
 
         # No stack part
@@ -304,18 +283,18 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
 
 
         #Check the owntoken required no stack
-        for square in white:
+        for square in Owntokens:
 
             maxindex2 = 0
-            print(f"check white token {square},currentdepth is {depth}")
+
 
             for move in boardgame.validMove(square,1,True):
 
                 #Copy the white in the tempsquare
                 if(not boardgame.onTheBoard(move)):
-                    print("############")
-                    tempsquarelist = white.copy()
-                    tempsquarelistB = black.copy()
+
+                    tempsquarelist = Owntokens.copy()
+                    tempsquarelistB = Opponentokens.copy()
                     owntokensBefore = boardgame.owntokens.copy()
                     opponenttokenBefore = boardgame.opponenttokens.copy()
 
@@ -323,71 +302,68 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
                     tempsquare = tempsquarelist[maxindex]
 
 
-                    newwhite, newblack = updateboomresult(tempsquare,white.copy(),black.copy())
+                    newOwntokens, newOpponentokens = updateboomresult(tempsquare,Owntokens.copy(),Opponentokens.copy())
                     boardgame.owntokens, boardgame.opponenttokens = updateboomresult(tempsquare,owntokensBefore.copy(),opponenttokenBefore.copy())
 
-                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,newblack,maxdepth)
+                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,newOpponentokens,maxdepth)
                     maxvalue = max(maxvalue,value)
 
                     if depth == maxdepth and value >= maxvalue:
-                            printList[("Bomb",tempsquare)] = value
+                            possibleMovement[("Bomb",tempsquare)] = value
                     alpha = max(alpha,maxvalue)
                     if beta <= alpha:
                         # Undo the movment
-                        white = tempsquarelist
-                        black = tempsquarelistB
+                        Owntokens = tempsquarelist
+                        Opponentokens = tempsquarelistB
                         boardgame.owntokens = owntokensBefore
                         boardgame.opponenttokens = opponenttokenBefore
                         break
 
 
-                    white = tempsquarelist
-                    black = tempsquarelistB
+                    Owntokens = tempsquarelist
+                    Opponentokens = tempsquarelistB
                     boardgame.owntokens = owntokensBefore
                     boardgame.opponenttokens = opponenttokenBefore
 
                 else:
 
 
-                    tempsquarelist = white.copy()
+                    tempsquarelist = Owntokens.copy()
                     tempsquare = tempsquarelist[maxindex]
-                    print(f"Owntokens at {tempsquarelist},move to{move}, go {maxindex2}. depth is {depth}")
+
 
                     #Update White
-                    white[maxindex]= move
-                    #print(f"printout white {white}")
+                    Owntokens[maxindex]= move
+
                     #Find the moved owntokens in the board
                     tempOwni = boardgame.owntokens.index(tempsquare)
                     boardgame.owntokens[tempOwni] = move
 
-                    #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
-                    #printList.append((Player, tempsquare))
-                    #temp = len(printList)
-                    #print(f"At the Layer route could be {printList}")
-                    newwhite = recoverFormat(white)
-                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,black,maxdepth)
-                    #printList = printList[:temp-1]
-                    #print(f"After back to the Layer route could be {printList}")
+
+
+                    newOwntokens = recoverFormat(Owntokens)
+                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,Opponentokens,maxdepth)
+
                     if depth == maxdepth and value >= maxvalue:
                         if boardgame.onTheBoard(move):
-                            printList[("MOVE",1,tempsquare,move)] = value
+                            possibleMovement[("MOVE",1,tempsquare,move)] = value
 
                     maxvalue = max(maxvalue,value)
 
 
 
                     alpha = max(alpha,maxvalue)
-                    #printList.append(move)
+
 
                     if beta <= alpha:
                         # Undo the movment
-                        white[maxindex]= tempsquare
+                        Owntokens[maxindex]= tempsquare
                         boardgame.owntokens[tempOwni] = tempsquare
                         break
 
 
                     # Undo the movment
-                    white[maxindex]= tempsquare
+                    Owntokens[maxindex]= tempsquare
                     boardgame.owntokens[tempOwni] = tempsquare
 
                 maxindex2 = maxindex2 + 1
@@ -400,33 +376,32 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
     else:
 
 
-        black = getinformat(boardgame,black,False)
+        Opponentokens = getinformat(boardgame,Opponentokens,False)
 
         minvalue = +1000
 
 
         #Stack part if doesnt work please delete this if
-        if detectStack(black):
+        if detectStack(Opponentokens):
 
-            dictStack = createDic(black)
+            dictStack = createDic(Opponentokens)
             # Key is the position of stacks
             for key in dictStack.keys():
                 if dictStack[key] > 1:
                     temp = dictStack[key]
-                    print(f" Now processing stack on{key}, the stack is number is{temp},currentdepth is {depth}")
-                    print("_____________\n")
+
 
                     stackdeep = dictStack[key]
                     while (stackdeep > 0):
-                        #print(f"current stackdeep is {stackdeep}")
+
 
                         for move in boardgame.validMove(key,temp,False):
-                            #print("_____________\n")
+
 
                             if(not boardgame.onTheBoard(move)):
-                                print("############")
-                                tempsquarelist = white.copy()
-                                tempsquarelistB = black.copy()
+
+                                tempsquarelist = Owntokens.copy()
+                                tempsquarelistB = Opponentokens.copy()
                                 owntokensBefore = boardgame.owntokens.copy()
                                 opponenttokenBefore = boardgame.opponenttokens.copy()
 
@@ -434,85 +409,78 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
                                 tempsquare = tempsquarelist[minindex]
 
 
-                                newwhite, newblack = updateboomresult(tempsquare,white.copy(),black.copy())
+                                newOwntokens, newOpponentokens = updateboomresult(tempsquare,Owntokens.copy(),Opponentokens.copy())
                                 boardgame.owntokens, boardgame.opponenttokens = updateboomresult(tempsquare,owntokensBefore.copy(),opponenttokenBefore.copy())
 
-                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,newblack,maxdepth)
+                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,newOpponentokens,maxdepth)
                                 minvalue = min(minvalue,value)
                                 beta = min(beta,minvalue)
-                                #printList.append(move)
+
                                 if beta <= alpha:
                                     # Undo the movment
-                                    white = tempsquarelist
-                                    black = tempsquarelistB
+                                    Owntokens = tempsquarelist
+                                    Opponentokens = tempsquarelistB
                                     boardgame.owntokens = owntokensBefore
                                     boardgame.opponenttokens = opponenttokenBefore
                                     break
 
-                                white = tempsquarelist
-                                black = tempsquarelistB
+                                Owntokens = tempsquarelist
+                                Opponentokens = tempsquarelistB
                                 boardgame.owntokens = owntokensBefore
                                 boardgame.opponenttokens = opponenttokenBefore
                                 stackdeep = 0
 
                             else:
 
-                                tempsquareList = black.copy()
+                                tempsquareList = Opponentokens.copy()
                                 tempsquare = key
 
-                                print(f"the black is {black}")
-                                indexblack = getDuplicateIndex(tempsquareList,key)[:stackdeep]
-                                #print(f"white index is {indexwhite}")
-                                for index in indexblack:
-                                   black[index] = move
-                                print(f"the black is upgraded to {black}")
-                                print(f"the black on board is {boardgame.opponenttokens}")
+
+                                indexOpponentokens = getDuplicateIndex(tempsquareList,key)[:stackdeep]
+
+                                for index in indexOpponentokens:
+                                   Opponentokens[index] = move
+
                                 boardindex = getDuplicateIndex(boardgame.opponenttokens,key)[:stackdeep]
 
-                                #print(f"board white index is {boardindex}")
+
                                 for index in boardindex:
                                     boardgame.opponenttokens[index] = move
-                                #print(f"the black on board is upgraded to {boardgame.opponenttokens}")
 
-                                #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
-                                #print("_____________\n")
 
-                                newblack = recoverFormat(black)
-                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,white,newblack,maxdepth)
+                                newOpponentokens = recoverFormat(Opponentokens)
+                                value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,Owntokens,newOpponentokens,maxdepth)
                                 minvalue = min(minvalue,value)
                                 beta = min(beta,minvalue)
-                                #printList.append(move)
+
 
                                 if beta <= alpha:
                                     # Undo the movment
-                                    for index in indexblack:
-                                        black[index] = key
+                                    for index in indexOpponentokens:
+                                        Opponentokens[index] = key
                                     for index in boardindex:
                                         boardgame.opponenttokens[index] = key
                                     break
-                                #print("done upgrade now do recover\n")
-                                #print("************")
-                                #print(f"the white was upgraded to {realwhite}")
-                                for index in indexblack:
-                                    black[index] = key
-                                #print(f"the white is recovered to {realwhite}")
-                                #print(f"the white on board was upgraded to {boardgame.owntokens}")
+
+                                for index in indexOpponentokens:
+                                    Opponentokens[index] = key
+
                                 for index in boardindex:
                                     boardgame.opponenttokens[index] = key
-                                #print(f"the white on board is recovered to {boardgame.owntokens}")
+
                         stackdeep -= 1
 
         minindex = 0
-        for square in black:
+        for square in Opponentokens:
 
             minindex2 = 0
-            print(f"check black token {square},currentdepth is {depth}")
+
             for move in boardgame.validMove(square,1,False):
 
                 if(not boardgame.onTheBoard(move)):
-                    print("############")
-                    tempsquarelist = white.copy()
-                    tempsquarelistB = black.copy()
+
+                    tempsquarelist = Owntokens.copy()
+                    tempsquarelistB = Opponentokens.copy()
                     owntokensBefore = boardgame.owntokens.copy()
                     opponenttokenBefore = boardgame.opponenttokens.copy()
 
@@ -520,56 +488,54 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,printList,white,black,m
                     tempsquare = tempsquarelist[minindex]
 
 
-                    newwhite, newblack = updateboomresult(tempsquare,white.copy(),black.copy())
+                    newOwntokens, newOpponentokens = updateboomresult(tempsquare,Owntokens.copy(),Opponentokens.copy())
                     boardgame.owntokens, boardgame.opponenttokens = updateboomresult(tempsquare,owntokensBefore.copy(),opponenttokenBefore.copy())
 
-                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,newwhite,newblack,maxdepth)
+                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,newOwntokens,newOpponentokens,maxdepth)
                     minvalue = min(minvalue,value)
                     beta = min(beta,minvalue)
-                    #printList.append(move)
+
                     if beta <= alpha:
                         # Undo the movment
-                        white = tempsquarelist
-                        black = tempsquarelistB
+                        Owntokens = tempsquarelist
+                        Opponentokens = tempsquarelistB
                         boardgame.owntokens = owntokensBefore
                         boardgame.opponenttokens = opponenttokenBefore
                         break
 
-                    white = tempsquarelist
-                    black = tempsquarelistB
+                    Owntokens = tempsquarelist
+                    Opponentokens = tempsquarelistB
                     boardgame.owntokens = owntokensBefore
                     boardgame.opponenttokens = opponenttokenBefore
 
                 else:
-                    #print(f"the current {square} can go {boardgame.validMove(square,1,False)}")
+
                     #Copy the black in the tempsquare
-                    tempsquarelist = black.copy()
+                    tempsquarelist = Opponentokens.copy()
                     tempsquare = tempsquarelist[minindex]
 
-                    print(f"Opponentokens at {tempsquarelist},move to{move}, go {minindex2}. depth is {depth}")
+
                     #Update black
-                    black[minindex]= move
-                    print(f"printout black {black}")
+                    Opponentokens[minindex]= move
+
                     #Find the moved owntokens in the board
                     tempOppi = boardgame.opponenttokens.index(tempsquare)
                     boardgame.opponenttokens[tempOppi] = move
 
-
-                    print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
-                    newblack = recoverFormat(black)
-                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,printList,white,newblack,maxdepth)
+                    newOpponentokens = recoverFormat(Opponentokens)
+                    value =  alphaBetaCore(boardgame,depth-1,alpha,beta,not Player,move,possibleMovement,Owntokens,newOpponentokens,maxdepth)
                     minvalue = min(minvalue,value)
 
 
                     beta = min(beta,minvalue)
-                    #printList.append(move)
+
                     if beta <= alpha:
                         # Undo the movment
-                        black[minindex]= tempsquare
+                        Opponentokens[minindex]= tempsquare
                         boardgame.opponenttokens[tempOppi] = tempsquare
                         break
                     # Undo the movment
-                    black[minindex]= tempsquare
+                    Opponentokens[minindex]= tempsquare
                     boardgame.opponenttokens[tempOppi] = tempsquare
                 minindex2 = minindex2 + 1
             minindex = minindex + 1
