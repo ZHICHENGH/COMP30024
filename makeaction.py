@@ -1,3 +1,14 @@
+
+def isEmpty(cor,coor):
+    if (cor in coor):
+        return False
+    else:
+        return True
+def CoorIsValid(coor):
+    if (coor[0]>=0 and coor[0]<=7):
+        if (coor[1]>=0 and coor[1]<=7):
+            return True
+    return False
 def getGoalArea(coor):
     goalArea=set()
     for i in coor:
@@ -44,6 +55,11 @@ def geteva(owntokens,opponenttokens):
             evavalue=0
             for coor in tmpresult[point]:
                 evavalue+=(opponenttokens.count(coor)-owntokens.count(coor))
+            if(isEmpty(point,alltokens) and evavalue!=0):
+                if(evavalue<0):
+                    evavalue+=1
+                else:
+                    evavalue-=1
             initeva[point]=evavalue
     return initeva
 
@@ -60,8 +76,7 @@ def getdistance(owntoken,goal,owntokens):
     else:
         dis2=dis2/stack
     return dis1+dis2
-
-def getchoosentokens(k,owntokens,opponenttokens):
+def gettokengoalcomb(owntokens,opponenttokens):
     initeva=geteva(owntokens,opponenttokens)
     tokengoalcomb=[]
     alltokens=owntokens+opponenttokens
@@ -71,21 +86,45 @@ def getchoosentokens(k,owntokens,opponenttokens):
         else:
             tmptokens=opponenttokens
         for tmptoken in tmptokens:
-                distance=getdistance(tmptoken,goalpoint)
-                tokengoalcomb.append([goalpoint,tmptoken,distance,initeva[goalpoint]])
+                distance=getdistance(tmptoken,goalpoint,tmptokens)
+                if(initeva[goalpoint]!=0):
+                    tokengoalcomb.append([goalpoint,tmptoken,distance,initeva[goalpoint]])
     tokengoalcomb=sorted(tokengoalcomb,key=lambda x:(x[2],x[3]))
+    return tokengoalcomb
+
+
+def getchoosentokens(k,owntokens,opponenttokens):
+    alltokens=opponenttokens+owntokens
+    tokengoalcomb=gettokengoalcomb(owntokens,opponenttokens)
     chosentokens=set()
+    minvalue=0
+    maxvalue=0
     for comb in tokengoalcomb:
-        if((abs(comb[3])>=1) and comb[2]<=2):
-            if(comb[3]>=0):
-                chosentokens.add(comb[1])
-            else:
-                boomArea=getboomArea(comb[0])
-                tmpresult=list(set(getBoomResult(boomArea,alltokens)))
-                for tmptoken in tmpresult:
-                     if tmptoken in owntokens:
-                         chosentokens.add(tmptoken)
-    if(len(chosentokens)==0):
+        if(tokengoalcomb[0][2]==comb[2]):
+            if(comb[3]>=maxvalue):
+                maxvalue=comb[3]
+            if(comb[3]<minvalue):
+                minvalue=comb[3]
+        else:
+            break
+    if(maxvalue>=abs(minvalue)):
+        decidevalue=maxvalue
+    else:
+        decidevalue=minvalue
+    for comb in tokengoalcomb:
+        if(tokengoalcomb[0][2]==comb[2]):
+            if(decidevalue==comb[3]):
+                if(decidevalue>=0):
+                    chosentokens.add(comb[1])
+                else:
+                    boomArea=getboomArea(comb[0])
+                    tmpresult=list(set(getBoomResult(boomArea,alltokens)))
+                    for tmptoken in tmpresult:
+                        if tmptoken in owntokens:
+                            chosentokens.add(tmptoken)
+        else:
+            break
+    '''if(len(chosentokens)==0):
         maxvalue=0
         stepnum=3
         while(len(chosentokens)==0):
@@ -99,11 +138,11 @@ def getchoosentokens(k,owntokens,opponenttokens):
                         for tmptoken in tmpresult:
                              if tmptoken in owntokens:
                                  chosentokens.add(tmptoken)
-            stepnum+=1
+            stepnum+=1'''
     return list(chosentokens)
 
-def makeevaluation(movement,coor,boardgame):
-    alltokens=boardgame.opponenttokens+boardgame.owntokens
+def makeevaluation(movement,coor,owntokens,opponenttokens):
+    alltokens=opponenttokens+owntokens
     evavalue=0
     if(movement=="boom"):
         boomArea=getboomArea(coor)
@@ -111,17 +150,26 @@ def makeevaluation(movement,coor,boardgame):
         for coor in tmplist:
             evavalue+=(opponenttokens.count(coor)-owntokens.count(coor))
     else:
-        initeva=geteva(boardgame.owntokens,boardgame.opponenttokens)
-        mindis=1000
-        evanumber=-1
-        for goalpoint in initeva.keys():
-            if initeva[goalpoint]>=1:
-                if(mindis>getdistance(coor,goalpoint,boardgame.owntokens)):
-                    mindis=getdistance(coor,goalpoint,boardgame.owntokens)
-                    evanumber=initeva[goalpoint]
-        if(evanumber!=-1):
-            evanumber=evanumber%20
+        tokengoalcombs=gettokengoalcomb(owntokens,opponenttokens)
+        mostvaluable=[]
+        mostdan=[]
+        for comb in tokengoalcombs:
+            if(mostvaluable!=[] and mostdan!=[]):
+                break
+            if((abs(comb[3])>=1)):
+                if(comb[3]>=0):
+                    if(mostvaluable==[]):
+                        mostvaluable=comb
+                else:
+                    if(mostdan==[]):
+                        mostdan=comb
+        print(mostvaluable,mostdan)
+        evavalue=(1.0*mostvaluable[3])/mostvaluable[2]+(1.0*mostdan[3])/mostdan[2]
     return evavalue
+
+
+
+
 
 def getinitGoal(owntokens,opponenttokens):
     goaldic=getGoal(opponenttokens)
@@ -155,4 +203,3 @@ def getsupportgoal(k,whites,blacks):
                 mindistance=distance
                 result=goalpoint
     return result
-    
