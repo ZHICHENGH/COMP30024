@@ -267,5 +267,3 @@ def alphaBetaCore(boardgame,movement,depth,alpha,beta,Player,coor,owntokens,oppo
             return makeevaluation(0,coor,owntokens,opponenttokens)
     possibleMovement=getpossiblemovement(coor,owntokens,opponenttokens)
 
-    if(depth%2==0):
-
