@@ -168,12 +168,8 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,possibleMovement,Owntok
 
     #Test only return
     if depth == 0:
-
-
         return len(list(set(getBoomResult(getboomArea(move),boardgame.opponenttokens))))\
          - len(list(set(getBoomResult(getboomArea(move),boardgame.owntokens))))
-
-
     if Player:
         Owntokens = getinformat(boardgame,Owntokens,True)
         maxvalue = -1000
@@ -475,7 +471,7 @@ def alphaBetaCore(boardgame,depth,alpha,beta,Player,move,possibleMovement,Owntok
 
             minindex2 = 0
 
-            for move in boardgame.validMove(square,1,False):
+            for move in boardgame.(validMove)(square,1,False):
 
                 if(not boardgame.onTheBoard(move)):
 
