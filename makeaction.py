@@ -368,8 +368,8 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
     return beta,fathermovement'''
 
 def main():
-    owntokens=[(0,0),(7,3)]
-    opponenttokens=[(2,1),(2,2)]
+    owntokens=[(0,2),(0,5)]
+    opponenttokens=[(0,3),(0,4)]
     boardgame=SquareBoard(owntokens,opponenttokens)
     movement=[boardgame,[]]
     print(alphaBetaCore(movement,0,-1000,1000,5,True))
