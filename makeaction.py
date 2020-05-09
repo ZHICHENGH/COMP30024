@@ -64,11 +64,8 @@ def geteva(owntokens,opponenttokens):
     for i in range(0,8):
         for j in range(0,8):
             point=(i,j)
-            boomArea=getboomArea(point)
-            tmpresult[point]=list(set(getBoomResult(boomArea,alltokens)))
-            evavalue=0
-            for coor in tmpresult[point]:
-                evavalue+=(opponenttokens.count(coor)-owntokens.count(coor))
+            #if(isEmpty(point,alltokens)):
+            evavalue=makeboomeva(point,owntokens,opponenttokens)
             if(isEmpty(point,alltokens) and evavalue!=0):
                 if(evavalue<0):
                     evavalue+=1
@@ -95,24 +92,45 @@ def gettokengoalcomb(owntokens,opponenttokens):
     tokengoalcomb=[]
     alltokens=owntokens+opponenttokens
     for goalpoint in initeva.keys():
-        if(initeva[goalpoint]>0):
-            tmptokens=owntokens
-        elif(initeva[goalpoint]<0):
-            tmptokens=opponenttokens
-        elif(initeva[goalpoint]==0):
-            tmptokens=owntokens+opponenttokens
-        for tmptoken in tmptokens:
-                distance=getdistance(tmptoken,goalpoint,tmptokens)
-                if(initeva[goalpoint]!=0):
-                    tokengoalcomb.append([goalpoint,tmptoken,distance,initeva[goalpoint]])
+        if(isEmpty(goalpoint,alltokens)):
+            if(initeva[goalpoint]>0):
+                tmptokens=owntokens
+            elif(initeva[goalpoint]<0):
+                tmptokens=opponenttokens
+            elif(initeva[goalpoint]==0):
+                tmptokens=owntokens+opponenttokens
+            for tmptoken in tmptokens:
+                    if(initeva[goalpoint]!=0):
+                        distance=getdistance(tmptoken,goalpoint,tmptokens)
+                        tokengoalcomb.append([goalpoint,tmptoken,distance,initeva[goalpoint]])
+        else:
+            if(initeva[goalpoint]>0 and (goalpoint in owntokens)):
+                tokengoalcomb.append([goalpoint,goalpoint,0,initeva[goalpoint]])
+            if(initeva[goalpoint]<0 and (goalpoint in opponenttokens)):
+                tokengoalcomb.append([goalpoint,goalpoint,0,initeva[goalpoint]])
     tokengoalcomb=sorted(tokengoalcomb,key=lambda x:(x[2],x[3]))
-    return tokengoalcomb
+    tplt=tokengoalcomb.copy()
+    for i in range (0,(len(tokengoalcomb)-1)):
+        if(tokengoalcomb[i]==tokengoalcomb[i+1]):
+            tplt.remove(tokengoalcomb[i])
+    return tplt
+
+
 def getchoosentokens(boardgame):
     alltokens=boardgame.opponenttokens+boardgame.owntokens
     tokengoalcomb=gettokengoalcomb(boardgame.owntokens,boardgame.opponenttokens)
     chosentokens=set()
     minvalue=0
     maxvalue=0
+
+    #boom tokens
+    for token in boardgame.owntokens:
+        area=getboomArea(token)
+        result=getBoomResult(area,alltokens)
+        if(len([i for i in result if i in boardgame.opponenttokens])!=0):
+            chosentokens.add(token)
+
+    #move tokens
     for comb in tokengoalcomb:
         if(tokengoalcomb[0][2]==comb[2]):
             if(comb[3]>=maxvalue):
@@ -140,21 +158,6 @@ def getchoosentokens(boardgame):
             break
     if(len(chosentokens)==0):
         return boardgame.owntokens        
-    '''if(len(chosentokens)==0):
-        maxvalue=0
-        stepnum=3
-        while(len(chosentokens)==0):
-            for comb in tokengoalcomb:
-                if((comb[3]>=1) and comb[2]<=stepnum):
-                    if(comb[3]>=0):
-                        chosentokens.add(comb[1])
-                    else:
-                        boomArea=getboomArea(comb[0])
-                        tmpresult=list(set(getBoomResult(boomArea,alltokens)))
-                        for tmptoken in tmpresult:
-                             if tmptoken in owntokens:
-                                 chosentokens.add(tmptoken)
-            stepnum+=1'''
     return list(chosentokens)
 
 def updateboomresult(coor,boardgame):
@@ -170,8 +173,17 @@ def updateboomresult(coor,boardgame):
         if(opponenttoken in result):
             tmpopponenttokens.remove(opponenttoken)
     return tmpowntokens,tmpopponenttokens
+def makeboomeva(coor,owntokens,opponenttokens):
+    alltokens=opponenttokens+owntokens
+    evavalue=0
+    boomArea=getboomArea(coor)
+    tmplist=list(set(getBoomResult(boomArea,alltokens)))
+    for coor in tmplist:
+        evavalue+=(opponenttokens.count(coor)-owntokens.count(coor))
+    return evavalue
 
-def makemovementeva(movement):
+
+def makemovementeva(movement,Player):
     boardgame=movement[0]
     owntokens=boardgame.owntokens
     opponenttokens=boardgame.opponenttokens
@@ -180,11 +192,22 @@ def makemovementeva(movement):
     evavalue=0
     if(movement[1][0]=="BOOM"):
         coor=movement[1][1]
-        boomArea=getboomArea(coor)
-        tmplist=list(set(getBoomResult(boomArea,alltokens)))
-        for coor in tmplist:
-            evavalue+=(opponenttokens.count(coor)-owntokens.count(coor))
+        evavalue=makeboomeva(coor,owntokens,opponenttokens)
     else:
+        coor=movement[1][3]
+        if(coor in owntokens):
+            if(makeboomeva(coor,owntokens,opponenttokens)>=1):
+                evavalue=makeboomeva(coor,owntokens,opponenttokens)
+                evavalue=evavalue+len(owntokens)-len(opponenttokens)
+                evavalue=(1.0*evavalue)/10
+                return evavalue
+        else:
+            if(makeboomeva(coor,owntokens,opponenttokens)<=-1):
+                evavalue=makeboomeva(coor,opponenttokens,owntokens)+0.1
+                evavalue=evavalue+len(owntokens)-len(opponenttokens)
+                evavalue=(1.0*evavalue)/10
+                return evavalue
+        
         tokengoalcombs=gettokengoalcomb(owntokens,opponenttokens)
         mostvaluable=[]
         mostdan=[]
@@ -194,34 +217,38 @@ def makemovementeva(movement):
             if((abs(comb[3])>=1)):
                 if(comb[3]>=0):
                     if(mostvaluable==[]):
-                        mostvaluable=comb
+                        if(isEmpty(comb[0],alltokens) or (comb[0] in owntokens)):
+                            mostvaluable=comb     
                 else:
                     if(mostdan==[]):
-                        mostdan=comb
-        '''if(mostvaluable==[]):
-            for comb in tokengoalcombs:
-                if(comb[3]==0 and comb[1] in owntokens):
-                    mostvaluable=comb
-                    break
-        if(mostdan==[]):
-            for comb in tokengoalcombs:
-                if(comb[1] in opponenttokens):
-                    mostdan=comb
-                    break
-        #print(mostvaluable,mostdan)'''
+                        if(isEmpty(comb[0],alltokens) or (comb[0] in opponenttokens)):
+                            mostdan=comb
         if(len(mostvaluable)!=0):
-            tmp1=max(1,mostvaluable[2])
+            if(mostvaluable[2]==0):
+                tmp1=1
+            else:
+                tmp1=mostvaluable[2]+1
             if(len(mostdan)!=0):
-                tmp2=max(1,mostdan[2])
+                if(mostdan[2]==0):
+                    tmp2=1
+                else:
+                    tmp2=1+mostdan[2]
                 evavalue=(1.0*mostvaluable[3])/tmp1+(1.0*mostdan[3])/tmp2
             else:
                 evavalue=(1.0*mostvaluable[3])/tmp1
         else:
             if(len(mostdan)!=0):
-                tmp2=max(1,mostdan[2])
+                if(mostdan[2]==0):
+                    tmp2=1
+                else:
+                    tmp2=1+mostdan[2]
                 evavalue=(1.0*mostdan[3])/tmp2
             else:
                 evavalue=0
+        coor=movement[1][3]
+        #evavalue+=(boardgame.owntokens.count(coor)-1)/6
+    evavalue=evavalue+len(owntokens)-len(opponenttokens)
+    evavalue=(1.0*evavalue)/20
     return evavalue
 
 
@@ -237,24 +264,16 @@ def getinitGoal(owntokens,opponenttokens):
             initgoals.append([goal,owntoken,distance,len(goaldic[goal])])
         
 
-def alphaBeta(white,black,boardgame):
-    alpha = 1000
-    beta = -1000
+def alphaBeta(owntokens,opponenttokens):
+    alpha = -1000
+    beta = 1000
     Player = True
-    #Make sure depth == maxdepth
-    depth = 3
-    maxdepth = 3
-    #print(f"printout chess board: black is {boardgame.opponenttokens}, white is {boardgame.owntokens}")
-    print("start\n")
-    startmove = (-1,-1)
-    # All possible move inside
-    #   Movemomen
-    possibleMovement = {}
-    # The best value
-    value = alphaBetaCore(boardgame,depth,alpha,beta,Player,startmove,possibleMovement,white,black,maxdepth)
-    print("finish\n")
-    print(f"A-B result is {value}")
-    print(f"THE MOVEMENT is {possibleMovement}")
+    depth = 0
+    maxdepth=2
+    boardgame=SquareBoard(owntokens,opponenttokens)
+    movement=[boardgame,[]]
+    value,ls=alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player)
+    return ls
 
 
 def GameOver(owntokens,opponenttokens):
@@ -267,15 +286,6 @@ def getpossiblemovement(boardgame):
     alltokens=boardgame.owntokens+boardgame.opponenttokens
     result=[]
     directions=[-1,1]
-    for point in boardgame.owntokens:
-     #boom
-        boomArea=getboomArea(point)
-        tmplist=list(set(getBoomResult(boomArea,alltokens)))
-        if(len([i for i in tmplist if i in boardgame.opponenttokens])!=0):
-            newowntokens,newopponenttokens=updateboomresult(point,boardgame.copy())
-            newboardgame=SquareBoard(newowntokens,newopponenttokens)
-            actiondescribe=("BOOM",point)
-            result.append([newboardgame,actiondescribe])
     for coor in coors: 
         stacknumber=boardgame.owntokens.count(coor)
         possiblegoal=[]
@@ -300,8 +310,24 @@ def getpossiblemovement(boardgame):
                     tplist.append(actiondescribe)
                     newboardgame.movementrecord=tplist
                     result.append([newboardgame,actiondescribe])
-
+    for point in boardgame.owntokens:
+     #boom
+        boomArea=getboomArea(point)
+        tmplist=list(set(getBoomResult(boomArea,alltokens)))
+        if(len([i for i in tmplist if i in boardgame.opponenttokens])!=0):
+            newowntokens,newopponenttokens=updateboomresult(point,boardgame.copy())
+            newboardgame=SquareBoard(newowntokens,newopponenttokens)
+            actiondescribe=("BOOM",point)
+            result.append([newboardgame,actiondescribe])
+            result.reverse()
     return result
+def removerepe(inputlist):
+    result=[]
+    if(inputlist!=[]):
+        for part in inputlist:
+            if not (part in result):
+                result.append(part)
+    return result.copy()
 def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
     #bottom of the tree
     boardgame=movement[0].copy()
@@ -311,21 +337,16 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
             return (-500,[])
         else:
             return (500,[])
-        '''else:
-            if(len(boardgame.owntokens)==0):
-                print(111)
-                return (500,[])
-            else:
-                return (-500,[])'''
     if (depth==maxdepth):
-        tmp=makemovementeva(movement)
-        return (makemovementeva(movement),[])
+        return (makemovementeva(movement,Player),[])
     if(Player==True):
         value=-1000
         choosenmove=[]
         possibleMovements=getpossiblemovement(boardgame)
-        #print(possibleMovements)
+        possibleMovements=removerepe(possibleMovements.copy())
         for possibleMovement in possibleMovements:
+            if(possibleMovement[1]==("MOVE",1,(6,6),(6,2))):
+                k=0
             tmpvalue,tmpls=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,False)
             if(tmpvalue>value):
                 value=tmpvalue
@@ -340,39 +361,44 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
         newopponenttokens=movement[0].owntokens.copy()
         boardgame=SquareBoard(newowntokens,newopponenttokens)
         possibleMovements=getpossiblemovement(boardgame)
+        possibleMovements=removerepe(possibleMovements.copy())
         for possibleMovement in possibleMovements:
-            #fathermovement.append(possibleMovement[1])
             newowntokens=possibleMovement[0].opponenttokens.copy()
             newopponenttokens=possibleMovement[0].owntokens.copy()
             newboardgame=SquareBoard(newowntokens,newopponenttokens)
             possibleMovement[0]=newboardgame
+            if(possibleMovement[1]==('MOVE', 1, (6, 1), (6, 0))):
+                c=0
             tmpvalue,fathermovement=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,True)
             value=min(tmpvalue,value)
             beta=min(beta,value)
             if(beta<=alpha):
                 break
         return value,boardgame.movementrecord
-    '''if(depth!=0):
-        newowntokens=movement[0].opponenttokens.copy()
-        newopponenttokens=movement[0].owntokens.copy()
-        boardgame=SquareBoard(newowntokens,newopponenttokens)
-    possibleMovements=getpossiblemovement(boardgame)
-    for possibleMovement in possibleMovements:
-        fathermovement.append(possibleMovement[1])
-        value,fathermovement=alphaBetaCore(possibleMovement,depth+1,-alpha,-beta,maxdepth,fathermovement)
-        value=-value
-        if(value>=alpha):
-            return alpha,fathermovement
-        if(value>beta):
-            beta=value
-    return beta,fathermovement'''
 
 def main():
-    owntokens=[(0,2),(0,5)]
-    opponenttokens=[(0,3),(0,4)]
+    owntokens=[(0,0),(0,1),(1,1),(1,0),(3,0),(4,0),(6,0),(6,0),(6,0),(6,0),(7,0),(7,1)]
+    opponenttokens=[(0,6),(0,7),(1,6),(1,7),(3,6),(3,7),(4,6),(4,7),(6,6),(6,7),(7,7),(7,7)]
     boardgame=SquareBoard(owntokens,opponenttokens)
-    movement=[boardgame,[]]
-    print(alphaBetaCore(movement,0,-1000,1000,5,True))
+    move=("MOVE",3,(6,1),(6,0))
+    movement=[boardgame,move]
+    print(makemovementeva(movement,True))
+
+    newowntokens=[(0,0),(0,1),(1,1),(1,0),(3,0),(4,0),(6,1),(6,1),(6,1),(6,1),(7,0),(7,1)]
+    newopponenttokens=[(0,6),(0,7),(1,6),(1,7),(3,6),(3,7),(4,6),(4,7),(6,6),(6,7),(7,7),(7,7)]
+    newboardgame=SquareBoard(newowntokens,newopponenttokens)
+    newmove=("MOVE",1,(6,0),(6,1))
+    newmovement=[newboardgame,newmove]
+    print(makemovementeva(newmovement,True))
+    '''
+    newowntokens=[(0,5),(0,7),(1,6),(1,7),(3,7),(4,7),(5,5),(5,5),(5,5),(6,7),(7,6),(7,7)]
+    newopponenttokens=[(0,1),(0,2),(1,0),(1,1),(2,0),(4,1),(5,0),(5,0),(6,0),(6,1),(7,0),(7,1)]
+    newboardgame=SquareBoard(newowntokens,newopponenttokens)
+    testmove=('MOVE', 1, (5, 5), (5, 2))
+    testmovement=[newboardgame,testmove]
+    #print(makemovementeva(testmovement,True))
+    newmovement=[newboardgame,[]]
+    print(alphaBetaCore(newmovement,0,-1000,1000,3,True))'''
 
 if __name__ == '__main__':
     main()
