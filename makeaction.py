@@ -70,6 +70,8 @@ def getdistance(owntoken,goal,owntokens):
     stack=owntokens.count(owntoken)
     dis1=abs(owntoken[0]-goal[0])
     dis2=abs(owntoken[1]-goal[1])
+    if(dis1+dis2==1):
+        return 0
     if(dis1%stack!=0):
         dis1=(dis1/stack)+1
     else:
@@ -207,7 +209,7 @@ def makemovementeva(movement,depth):
         evavalue=makeboomeva(coor,owntokens,opponenttokens)
         if(evavalue==0):
             if(len(owntokens)-len(opponenttokens)>0):
-                evavalue=0.1
+                evavalue=0.9
     else:
         tokengoalcombs=gettokengoalcomb(owntokens,opponenttokens)
         mindist=0
@@ -234,8 +236,13 @@ def makemovementeva(movement,depth):
             tmplist=getclosedtokens(newboardgame)
             minvalue=-owntokens.count(tmplist[2])
             mindist=tmplist[0]
-        evavalue=maxvalue/(maxdist+1)+minvalue/(mindist+1)
-    evavalue=evavalue+len(owntokens)-len(opponenttokens)
+        evavalue=maxvalue/(maxdist+2)+minvalue/(mindist+2)
+        tmpls=set(owntokens)
+        for coor in tmpls:
+            stacknum=owntokens.count(coor)
+            if(stacknum>1):
+                evavalue+=1.0*stacknum/20
+    evavalue=evavalue+(len(owntokens)/(len(owntokens)+len(opponenttokens)))*12
     return evavalue
 
 
@@ -245,7 +252,13 @@ def alphaBeta(owntokens,opponenttokens):
     beta = 1000
     Player = True
     depth = 1
-    maxdepth=3
+    tokennum=len(owntokens)+len(opponenttokens)
+    if(tokennum>20):
+        maxdepth=3
+    elif(tokennum>=8 and tokennum<=20):
+        maxdepth=4
+    else:
+        maxdepth=5
     boardgame=SquareBoard(owntokens,opponenttokens)
     movement=[boardgame,[]]
     value,ls=alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player)
@@ -289,10 +302,6 @@ def getpossiblemovement(boardgame):
     #boom
     for point in coors:
         if(point in boardgame.owntokens):
-            boomArea=getboomArea(point)
-            tmplist=getBoomResult(boomArea,alltokens)
-            tmplist.append(point)
-            tmplist=list(set(tmplist))
             if(makeboomeva(point,boardgame.owntokens,boardgame.opponenttokens)>=0):
                 actiondescribe=("BOOM",point)
                 result.append([boardgame,actiondescribe])
@@ -328,8 +337,8 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
         possibleMovements=removerepe(possibleMovements.copy())
         for possibleMovement in possibleMovements:
             tmpvalue,tmpls=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,False)
-            if(depth==1):
-                print(tmpvalue,possibleMovement[1])
+            #if(depth==1):
+               #print(tmpvalue,possibleMovement[1])
             if(tmpvalue>value):
                 value=tmpvalue
                 choosenmove=possibleMovement[1]
@@ -350,6 +359,8 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
             newboardgame=SquareBoard(newowntokens,newopponenttokens)
             possibleMovement[0]=newboardgame
             tmpvalue,fathermovement=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,True)
+            #if(depth==2 and movement[1]==('MOVE', 1, (2, 5), (2, 6))):
+                #print(tmpvalue,possibleMovement)
             value=min(tmpvalue,value)
             beta=min(beta,value)
             if(beta<=alpha):
@@ -367,13 +378,13 @@ def main():
     #print(makemovementeva(movement,True))
     print(alphaBetaCore(movement,1,-1000,1000,4,True))
 '''
-    owntokens=[(0,0),(0,1),(1,1),(1,0),(3,0),(4,0),(2,5),(6,0),(7,0),(6,1),(7,1)]
-    opponenttokens=[(0,2),(0,7),(1,6),(1,7),(3,7),(4,7),(4,7),(4,7)]
+    owntokens=[(0,0),(3,1),(3,4),(3,4),(6,0),(6,0)]
+    opponenttokens=[(1,6),(3,3),(3,3),(6,2)]
     boardgame=SquareBoard(owntokens,opponenttokens)
     move=[]
     movement=[boardgame,move]
     #print(makemovementeva(movement,True))
-    print(alphaBetaCore(movement,1,-1000,1000,4,True))
+    print(alphaBetaCore(movement,1,-1000,1000,5,True))
     '''
     newowntokens=[(4,4),(4,4),(4,4),(4,4),(3,3),(3,0),(4,0),(6,0),(6,1),(7,0),(7,1)]
     newopponenttokens=[(1,1),(1,1),(3,1),(3,0),(3,0),(3,0),(4,0),(4,1),(6,0),(6,1),(7,0),(7,1)]
