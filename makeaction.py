@@ -259,7 +259,7 @@ def alphaBeta(owntokens,opponenttokens,timecount):
     if(timecount>30):
         if(maxdepth>=4):
             maxdepth-=1
-    elif(timecount>35):
+    if(timecount>40):
         maxdepth=3
     boardgame=SquareBoard(owntokens,opponenttokens)
     movement=[boardgame,[]]
