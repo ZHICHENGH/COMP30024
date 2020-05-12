@@ -56,7 +56,6 @@ def geteva(owntokens,opponenttokens):
     for i in range(0,8):
         for j in range(0,8):
             point=(i,j)
-            #if(isEmpty(point,alltokens)):
             evavalue=makeboomeva(point,owntokens,opponenttokens)
             if(isEmpty(point,alltokens) and evavalue!=0):
                 if(evavalue<0):
@@ -190,7 +189,6 @@ def makemovementeva(movement,depth):
     boardgame=movement[0].copy()
     owntokens=boardgame.owntokens
     opponenttokens=boardgame.opponenttokens
-    #print(owntokens,opponenttokens)
     alltokens=opponenttokens+owntokens
     evavalue=0
     if(movement[1][0]=="BOOM"):
@@ -261,7 +259,7 @@ def alphaBeta(owntokens,opponenttokens,timecount):
     if(timecount>30):
         if(maxdepth>=4):
             maxdepth-=1
-    elif(timecount>40):
+    elif(timecount>35):
         maxdepth=3
     boardgame=SquareBoard(owntokens,opponenttokens)
     movement=[boardgame,[]]
@@ -349,8 +347,6 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
         possibleMovements=removerepe(possibleMovements.copy())
         for possibleMovement in possibleMovements:
             tmpvalue,tmpls=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,False)
-            if(depth==1):
-                print(tmpvalue,possibleMovement)
             if(tmpvalue>value):
                 value=tmpvalue
                 choosenmove=possibleMovement[1]
@@ -371,50 +367,8 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
             newboardgame=SquareBoard(newowntokens,newopponenttokens)
             possibleMovement[0]=newboardgame
             tmpvalue,fathermovement=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,True)
-            #if(depth==2 and movement[1]==('MOVE', 1, (2, 5), (2, 6))):
-                #print(tmpvalue,possibleMovement)
             value=min(tmpvalue,value)
             beta=min(beta,value)
             if(beta<=alpha):
                 break
         return value,boardgame.movementrecord
-
-def main():
-    '''
-    owntokens=[(0,0),(0,1),(1,1),(1,0),(3,0),(4,0),(4,3),(4,3),(6,0),(6,1),(7,0),(7,1)]
-    
-    opponenttokens=[(0,6),(0,7),(1,4),(1,4),(3,6),(3,7),(4,6),(4,7),(7,6),(7,7),(6,6),(6,7)]
-    boardgame=SquareBoard(owntokens,opponenttokens)
-    move=[]
-    movement=[boardgame,move]
-    #print(makemovementeva(movement,True))
-    print(alphaBetaCore(movement,1,-1000,1000,4,True))
-'''
-    owntokens=[(0,6),(0,7),(1,7),(1,6),(1,6),(1,6),(1,6),(3,7),(6,7),(7,6),(6,6),(7,7)]
-    opponenttokens=[(0,0),(0,1),(1,1),(1,0),(3,1),(4,1),(6,0),(6,1),(7,0),(7,1),(6,3),(6,5)]
-    boardgame=SquareBoard(owntokens,opponenttokens)
-    move=[]
-    movement=[boardgame,move]
-    #print(makemovementeva(movement,True))
-    print(alphaBetaCore(movement,1,-1000,1000,3,True))
-    '''
-    newowntokens=[(4,4),(4,4),(4,4),(4,4),(3,3),(3,0),(4,0),(6,0),(6,1),(7,0),(7,1)]
-    newopponenttokens=[(1,1),(1,1),(3,1),(3,0),(3,0),(3,0),(4,0),(4,1),(6,0),(6,1),(7,0),(7,1)]
-    newboardgame=SquareBoard(newowntokens,newopponenttokens)
-    newmove=("MOVE",4,(1,4),(4,4))
-    newmovement=[newboardgame,newmove]
-    print(makemovementeva(newmovement,True))
-    #print(alphaBetaCore(newmovement,0,-1000,1000,3,True))
-    
-    newowntokens=[(0,5),(0,7),(1,6),(1,7),(3,7),(4,7),(5,5),(5,5),(5,5),(6,7),(7,6),(7,7)]
-    newopponenttokens=[(0,1),(0,2),(1,0),(1,1),(2,0),(4,1),(5,0),(5,0),(6,0),(6,1),(7,0),(7,1)]
-    newboardgame=SquareBoard(newowntokens,newopponenttokens)
-    testmove=('MOVE', 1, (5, 5), (5, 2))
-    testmovement=[newboardgame,testmove]
-    #print(makemovementeva(testmovement,True))
-    newmovement=[newboardgame,[]]
-    print(alphaBetaCore(newmovement,0,-1000,1000,3,True))'''
-
-if __name__ == '__main__':
-    main()
-
