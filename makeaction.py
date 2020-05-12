@@ -232,11 +232,14 @@ def makemovementeva(movement,depth):
         for coor in tmpls:
             stacknum=owntokens.count(coor)
             if(stacknum>1):
-                evavalue+=1.0*stacknum/20
+                if(len(owntokens)+len(opponenttokens)>3):
+                    evavalue+=1.0*stacknum/20
+                else:
+                    evavalue-=1.0*stacknum/20
     if(len(owntokens)-len(opponenttokens)<2):
         evavalue=evavalue+1.5*(len(owntokens)-len(opponenttokens))
     else:
-        evavalue=evavalue+12-len(opponenttokens)
+        evavalue=evavalue+len(owntokens)-0.9*len(opponenttokens)
     return evavalue
 
 
@@ -247,11 +250,11 @@ def alphaBeta(owntokens,opponenttokens,timecount):
     Player = True
     depth = 1
     tokennum=len(owntokens)+len(opponenttokens)
-    if(tokennum>=20):
+    if(tokennum>=18):
         maxdepth=3
-    elif(tokennum>=10 and tokennum<20):
+    elif(tokennum>=10 and tokennum<18):
         maxdepth=4
-    elif(tokennum>=4 and tokennum<10):
+    elif(tokennum>=5 and tokennum<10):
         maxdepth=5
     else:
         maxdepth=7 
@@ -346,6 +349,8 @@ def alphaBetaCore(movement,depth,alpha,beta,maxdepth,Player):
         possibleMovements=removerepe(possibleMovements.copy())
         for possibleMovement in possibleMovements:
             tmpvalue,tmpls=alphaBetaCore(possibleMovement,depth+1,alpha,beta,maxdepth,False)
+            if(depth==1):
+                print(tmpvalue,possibleMovement)
             if(tmpvalue>value):
                 value=tmpvalue
                 choosenmove=possibleMovement[1]
@@ -385,8 +390,8 @@ def main():
     #print(makemovementeva(movement,True))
     print(alphaBetaCore(movement,1,-1000,1000,4,True))
 '''
-    owntokens=[(0,0),(0,1),(1,0),(1,0),(3,0),(3,0),(7,5),(7,5)]
-    opponenttokens=[(7,6)]
+    owntokens=[(0,6),(0,7),(1,7),(1,6),(1,6),(1,6),(1,6),(3,7),(6,7),(7,6),(6,6),(7,7)]
+    opponenttokens=[(0,0),(0,1),(1,1),(1,0),(3,1),(4,1),(6,0),(6,1),(7,0),(7,1),(6,3),(6,5)]
     boardgame=SquareBoard(owntokens,opponenttokens)
     move=[]
     movement=[boardgame,move]
